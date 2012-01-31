@@ -20,7 +20,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -54,7 +53,6 @@ public class TreeViewListDemo extends Activity {
     protected static Context Activity = null;
     protected static Bundle SavedInstanceState = null;
     private TreeStateManager<Long> manager = null;
-    private FancyColouredVariousSizesAdapter fancyAdapter;
     private SimpleStandardAdapter simpleAdapter;
     private TreeType treeType;
     private boolean collapsible;
@@ -187,7 +185,6 @@ public class TreeViewListDemo extends Activity {
         } 
         setContentView(R.layout.main_demo);
         treeView = (TreeViewList) findViewById(R.id.mainTreeView);
-        fancyAdapter = new FancyColouredVariousSizesAdapter(this, selected, manager, LEVEL_NUMBER);
         simpleAdapter = new SimpleStandardAdapter(this, selected, manager, LEVEL_NUMBER, this);
         setTreeAdapter(newTreeType);
         setCollapsible(newCollapsible);
@@ -242,9 +239,6 @@ public class TreeViewListDemo extends Activity {
         switch (newTreeType) {
         case SIMPLE:
             treeView.setAdapter(simpleAdapter);
-            break;
-        case FANCY:
-            treeView.setAdapter(fancyAdapter);
             break;
         default:
             treeView.setAdapter(simpleAdapter);
