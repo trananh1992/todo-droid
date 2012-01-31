@@ -1,4 +1,4 @@
-package pl.polidea.treeview.demo;
+package melectric.tododroid;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -86,18 +86,42 @@ public class TreeViewListDemo extends Activity {
                          titles.add(Id);
                      }while(c.moveToNext());
                     }
-                    populateTree(myDB);
             }
             catch(Exception e) {
                 Log.e("Error", "Error", e);
                 
                 new AlertDialog.Builder(this)
-                .setTitle("No Imported Data Found")
-                .setMessage("Press Menu - Import to load Data")
+                .setTitle("No Data Found")
+                .setMessage("Do you want to import 'TaskList.tdl' from SDCard root directory?")
                 .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton(android.R.string.yes, null)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                    }})
                  .setNegativeButton(android.R.string.no, null).show();
                }
+            
+            try {
+                importXML();
+
+                populateTree(myDB);
+            }catch (IOException e) {
+                new AlertDialog.Builder(Activity)
+                .setTitle("Error")
+                .setMessage("File Tasklist.tdl not found.")
+                .setPositiveButton(android.R.string.yes, null)
+                .setNegativeButton(android.R.string.no, null).show();
+            } catch (Exception e) {
+                e.printStackTrace();
+                //TODO: Load XML Failed
+                new AlertDialog.Builder(Activity)
+                .setTitle("Error")
+                .setMessage("Sorry An Error Has Occured.")
+                .setPositiveButton(android.R.string.yes, null)
+                    .setNegativeButton(android.R.string.no, null).show();
+            }
+        
         } catch (Exception e1) {
             e1.printStackTrace();
             //Load Failed
