@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TreeViewListDemo</string>
+    <string name="app_name">TodoDroid</string>
     <string name="simple_menu_name">Simple Adapter</string>
     <string name="simple_menu_condensed">Simple</string>
     <string name="fancy_menu_name">Open From SD</string>
