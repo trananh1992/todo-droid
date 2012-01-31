@@ -28,19 +28,16 @@ public class BaseFeedParser {
         tasks = new ArrayList<Task>();  
         
         try{
-            
             File f = new File(Environment.getExternalStorageDirectory()+"/TaskList.tdl");
           
             FileInputStream fileIS = new FileInputStream(f);
 
-    
-        DocumentBuilderFactory builderFactory =
-                DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
         
-        builderFactory.setNamespaceAware(false);
-        builderFactory.setValidating(false);
-        builderFactory.setFeature("http://xml.org/sax/features/namespaces", false);
-        builderFactory.setFeature("http://xml.org/sax/features/validation", false);
+	        builderFactory.setNamespaceAware(false);
+	        builderFactory.setValidating(false);
+	        builderFactory.setFeature("http://xml.org/sax/features/namespaces", false);
+	        builderFactory.setFeature("http://xml.org/sax/features/validation", false);
 
             DocumentBuilder builder = builderFactory.newDocumentBuilder();
             
@@ -49,9 +46,7 @@ public class BaseFeedParser {
              
             getChildNodes(rootElement, null, -1);
             
-          
             return tasks;
-            
         } catch (ParserConfigurationException e) {
             e.printStackTrace();  
             throw e;
