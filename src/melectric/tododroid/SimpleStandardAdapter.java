@@ -28,7 +28,7 @@ class SimpleStandardAdapter extends AbstractTreeViewAdapter<Long> {
     private final Context mContext;
     private final SQLiteDatabase myDB;
     
-    public SimpleStandardAdapter(final TreeViewListDemo treeViewListDemo,
+    public SimpleStandardAdapter(final TodoDroid treeViewListDemo,
             final Set<Long> selected,
             final TreeStateManager<Long> treeStateManager,
             final int numberOfLevels, Context context) {
