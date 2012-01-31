@@ -61,7 +61,6 @@ public class TodoDroid extends Activity {
     private final String MY_DATABASE_TABLE = "t_Tasks";
   
     
-    @SuppressWarnings("unchecked")
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -133,7 +132,8 @@ public class TodoDroid extends Activity {
         }
     }
 
-    private void populateTree(SQLiteDatabase myDB) {
+    @SuppressWarnings("unchecked")
+	private void populateTree(SQLiteDatabase myDB) {
         List<Integer> titles = new ArrayList<Integer>(); 
         myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
         Cursor cursor = myDB.rawQuery("SELECT * FROM t_Tasks" , null);

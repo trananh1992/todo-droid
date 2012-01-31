@@ -60,27 +60,6 @@ class SimpleStandardAdapter extends AbstractTreeViewAdapter<Long> {
         }
     }
 
-    private String getDescription(final long id) {
-        String Title = "";
-
-        try {
-           Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE Id = " + id, null);
-
-            int Column2 = c.getColumnIndex("Title");
-
-            c.moveToFirst();
-            if (c != null) {
-                do {
-                    Title = c.getString(Column2);
-                } while (c.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("Error", "Error", e);
-        }
-
-        return Title;
-    }
-    
     private Task getTask(final long id) {
         Task task = new Task();
 
