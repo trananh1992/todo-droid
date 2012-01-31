@@ -1,0 +1,10 @@
+Features planned for upcoming versions
+
+==V1.0==
+  * Select Task file from dropbox folder
+
+==V2.0==
+  * Save completed tasks
+  * Add new tasks
+  * Edit existing tasks
+  * Filter list by incomplete/completed/date ect.
