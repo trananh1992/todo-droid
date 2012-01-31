@@ -1,5 +1,8 @@
 Features planned for upcoming versions
 
+==V0.2==
+  * Load Completed checkboxes with correct values
+
 ==V1.0==
   * Select Task file from dropbox folder
 
