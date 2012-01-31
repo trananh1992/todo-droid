@@ -36,7 +36,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
  * Demo activity showing how the tree view can be used.
  * 
  */
-public class TreeViewListDemo extends Activity {
+public class TodoDroid extends Activity {
     private enum TreeType implements Serializable {
         SIMPLE,
         FANCY
@@ -44,7 +44,7 @@ public class TreeViewListDemo extends Activity {
 
     private final Set<Long> selected = new HashSet<Long>();
 
-    private static final String TAG = TreeViewListDemo.class.getSimpleName();
+    private static final String TAG = TodoDroid.class.getSimpleName();
     private TreeViewList treeView;
 
     // TODO: Set the correct value for the number of levels
