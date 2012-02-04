@@ -9,4 +9,5 @@
 	<item android:titleCondensed="@string/collapse_all_condesed" android:title="@string/collapse_all_menu"
 		android:alphabeticShortcut="c" android:visible="true" android:enabled="true" android:numericShortcut="4"
 		android:id="@+id/collapse_all_menu_item"></item>
+	<item android:id="@+id/export_menu_item" android:titleCondensed="@string/export_menu" android:title="@string/export_menu"></item>
 </menu>

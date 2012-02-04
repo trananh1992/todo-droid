@@ -1,11 +1,20 @@
 package melectric.tododroid;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.xmlpull.v1.XmlSerializer;
 
 import melectric.todoxmlparser.BaseFeedParser;
 import melectric.todoxmlparser.Task;
@@ -23,7 +32,9 @@ import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
+import android.util.Xml;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
@@ -300,6 +311,8 @@ public class TodoDroid extends Activity {
             
            // Intent myIntent = new Intent(Activity, TaskDetails.class);
            // startActivityForResult(myIntent, 0);
+        } else if (item.getItemId() == R.id.export_menu_item) {
+            Export();
         } else if (item.getItemId() == R.id.expand_all_menu_item) {
             manager.expandEverythingBelow(null);
         } else if (item.getItemId() == R.id.collapse_all_menu_item) {
@@ -310,7 +323,82 @@ public class TodoDroid extends Activity {
         return true;
     }
 
-    @Override
+    private void Export() {
+    	//create a new file called "new.xml" in the SD card
+        File newxmlfile = new File(Environment.getExternalStorageDirectory()+"/new.xml");
+        try{
+                newxmlfile.createNewFile();
+        }catch(IOException e){
+                Log.e("IOException", "exception in createNewFile() method");
+        }
+        //we have to bind the new file with a FileOutputStream
+        FileOutputStream fileos = null;        
+        try{
+                fileos = new FileOutputStream(newxmlfile);
+        }catch(FileNotFoundException e){
+                Log.e("FileNotFoundException", "can't create FileOutputStream");
+        }
+        //we create a XmlSerializer in order to write xml data
+        XmlSerializer serializer = Xml.newSerializer();
+        try {
+                //we set the FileOutputStream as output for the serializer, using UTF-8 encoding
+                        serializer.setOutput(fileos, "UTF-8");
+                        //Write <?xml declaration with encoding (if encoding not null) and standalone flag (if standalone not null)
+                        serializer.startDocument(null, Boolean.valueOf(true));
+                        //set indentation option
+                        serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+                        //start a tag called "root"
+                        serializer.startTag(null, "root");
+                        //i indent code just to have a view similar to xml-tree
+                        
+                        SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+                        Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks", null);
+
+                        int Column2 = c.getColumnIndex("Title");
+                        int CompletedColumn = c.getColumnIndex("Completed");
+                        
+                        Task task = new Task();
+                        c.moveToFirst();
+                        if (c != null) {
+                            do {
+                                task.Title = c.getString(Column2);
+                                int completedint = new Integer(c.getString(CompletedColumn));
+                                task.Completed = completedint == 1;
+                                
+                                
+                                serializer.startTag(null, "Task");
+                                //set an attribute called "attribute" with a "value" for <child2>
+                                serializer.attribute(null, "TITLE", task.Title);
+                                serializer.endTag(null, "Task");
+                                
+                            } while (c.moveToNext());
+                        }
+                               
+                        serializer.endTag(null, "root");
+                        serializer.endDocument();
+                        //write xml data into the FileOutputStream
+                        serializer.flush();
+                        //finally we close the file stream
+                        fileos.close();
+                    	
+                        new AlertDialog.Builder(Activity)
+                        .setTitle("Success")
+                        .setMessage("The File has been created")
+                        .setPositiveButton(android.R.string.yes, null)
+                            .setNegativeButton(android.R.string.no, null).show();
+                } catch (Exception e) {
+                        Log.e("Exception","error occurred while creating xml file");
+                }
+    
+    	
+        new AlertDialog.Builder(Activity)
+        .setTitle("Sorry!")
+        .setMessage("Export has not yet been implemented.")
+        .setPositiveButton(android.R.string.yes, null)
+            .setNegativeButton(android.R.string.no, null).show();
+}
+
+	@Override
     public void onCreateContextMenu(final ContextMenu menu, final View v,
             final ContextMenuInfo menuInfo) {
         final AdapterContextMenuInfo adapterInfo = (AdapterContextMenuInfo) menuInfo;
