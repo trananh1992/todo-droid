@@ -17,4 +17,5 @@
     <string name="expand_menu_condensed">Expand</string>
     <string name="delete_menu">Delete</string>
     <string name="delete_menu_condensed">Delete</string>
+    <string name="export_menu">Export</string>
 </resources>
