@@ -217,7 +217,7 @@ public class TodoDroid extends Activity {
                 database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
                 
                 database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
-                    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3));");
+                    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3));");
                     
                 for (int i = 0; i < tasks.size(); i++) {
                 	Task task = tasks.get(i);
@@ -348,8 +348,10 @@ public class TodoDroid extends Activity {
                         serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
                         //start a tag called "root"
                         serializer.startTag(null, "TODOLIST");
-                        //i indent code just to have a view similar to xml-tree
                         
+                    	StringBuilder nowYYYYMMDD = new StringBuilder(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+                    	serializer.attribute(null, "LASTMODIFIED", nowYYYYMMDD.toString());
+                                                
                         SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
                         Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId  IS NULL", null);
 
@@ -358,27 +360,9 @@ public class TodoDroid extends Activity {
                             do {
                             	Task task = new Task(c);
                             	
-                                
-                                serializer.startTag(null, "TASK");
-                                serializer.attribute(null, "ID", task.Id.toString());
-                                serializer.attribute(null, "TITLE", task.Title);
-                                if(task.Completed)
-                                {
-                                	serializer.attribute(null, "PERCENTDONE", "100");
-                                	//TODO: DONEDATE and DONEDATESTRING - needs to load from database(when the field has been implemented), and needs to implement time
-                                	Date doneDate = new Date();
-                                	
-                                	SimpleDateFormat dateformatYYYYMMDD = new SimpleDateFormat("yyyy-MM-dd");
-                                	StringBuilder nowYYYYMMDD = new StringBuilder( dateformatYYYYMMDD.format(doneDate));
-                                	serializer.attribute(null, "DONEDATESTRING", nowYYYYMMDD.toString());
-                                	
-                                	long diffInDays = (doneDate.getTime() - new Date(0,0,1).getTime())/1000/60/60/24;
-                                	
-                                	serializer.attribute(null, "DONEDATE", String.valueOf(diffInDays));
-                                }
-                                
+                               	serializer.startTag(null, "TASK");
+                                task.SaveAttributesToFile(serializer);
                                 CreateChildTask(myDB, serializer, task.Id);
-                                
                                 serializer.endTag(null, "TASK");
                                 
                             } while (c.moveToNext());
@@ -408,48 +392,20 @@ public class TodoDroid extends Activity {
 }
 
 	private void CreateChildTask(SQLiteDatabase myDB, XmlSerializer serializer, Integer parentId) throws IllegalArgumentException, IllegalStateException, IOException {
-        Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId = " + parentId, null);
-        int IdColumn = c.getColumnIndex("Id");
-        int TitleColumn = c.getColumnIndex("Title");
-        int CompletedColumn = c.getColumnIndex("Completed");
+        Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId = " + parentId, null);      
         
-        Task task = new Task();
         c.moveToFirst();
         if (c != null && c.getCount() > 0) {
             do {
-            	task.Id = c.getInt(IdColumn);
-                task.Title = c.getString(TitleColumn);
-                int completedint = new Integer(c.getString(CompletedColumn));
-                task.Completed = completedint == 1;
+            	Task task = new Task(c);
                 
-                
-                serializer.startTag(null, "TASK");
-                serializer.attribute(null, "ID", task.Id.toString());
-                serializer.attribute(null, "TITLE", task.Title);
-                if(completedint == 1)
-                {
-                	serializer.attribute(null, "PERCENTDONE", "100");
-                	
-                	//TODO: DONEDATE and DONEDATESTRING - needs to load from database(when the field has been implemented), and needs to implement time
-                	Date doneDate = new Date();
-                	
-                	SimpleDateFormat dateformatYYYYMMDD = new SimpleDateFormat("yyyy-MM-dd");
-                	StringBuilder nowYYYYMMDD = new StringBuilder( dateformatYYYYMMDD.format(doneDate));
-                	serializer.attribute(null, "DONEDATESTRING", nowYYYYMMDD.toString());
-                	
-                	long diffInDays = (doneDate.getTime() - new Date(0,0,1).getTime())/1000/60/60/24;
-                	
-                	serializer.attribute(null, "DONEDATE", String.valueOf(diffInDays));
-                }	
-                
-                
+            	serializer.startTag(null, "TASK");
+                task.SaveAttributesToFile(serializer);
                 CreateChildTask(myDB, serializer, task.Id);
-                
                 serializer.endTag(null, "TASK");
                 
             } while (c.moveToNext());
         }
-		
 	}
 
 	@Override
