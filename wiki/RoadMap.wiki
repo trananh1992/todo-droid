@@ -1,13 +1,11 @@
 Features planned for upcoming versions
 
-==V0.2==
-  * Load Completed checkboxes with correct values
-
 ==V1.0==
-  * Select Task file from dropbox folder
+  * Save all Task Attributes
+  * Remember the last viewed file and load on startup
+  * ability to change the file being viewed
 
 ==V2.0==
-  * Save completed tasks
   * Add new tasks
   * Edit existing tasks
   * Filter list by incomplete/completed/date ect.
