@@ -70,27 +70,12 @@ public class BaseFeedParser {
                 Node childNode = childNodes.item(j);
                 if(childNode instanceof Element){
                     Element child = (Element) childNode;
-                    Task task = new Task();
-                    String title = child.getAttribute("TITLE");
-                    list.add(title);
-                    task.Title = title;
-                    try{
-                        Integer id = new Integer(child.getAttribute("ID"));
-                        task.Id = new Integer(id);
-                        task.ParentId = parentId;
-                        try{
-                            Integer completedPercent = new Integer(child.getAttribute("PERCENTDONE"));
-                            boolean completed = completedPercent == 100;
-                            task.Completed = completed;
-                        }
-                        catch(Exception e){
-                            // PercentDone might not exist so set to false
-                            task.Completed = false;
-                        }
-                        task.Level = parentLevel + 1;
+                    try
+                    {
+                    Task task = new Task(child, parentId, parentLevel);
                         tasks.add(task);
-                        
-                        getChildNodes(child, id, parentLevel + 1);
+                        list.add(task.Title);
+                        getChildNodes(child, task.Id, parentLevel + 1);
                     }
                     catch(NumberFormatException e){
                         // Not a Task Node so Ignore

@@ -34,6 +34,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
@@ -210,7 +211,7 @@ public class TodoDroid extends Activity {
         try {
         	
         	// Environment.getExternalStorageDirectory()+"/TaskList.tdl"
-            List<Task> tasks = BaseFeedParser.parse2(Environment.getExternalStorageDirectory()+"/" + mChosenFile);
+            List<Task> tasks = BaseFeedParser.parse2(mPath.getAbsolutePath()+"//" + mChosenFile);
                 this.deleteDatabase(MY_DATABASE_NAME);
                 
                 database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
@@ -219,13 +220,8 @@ public class TodoDroid extends Activity {
                     + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3));");
                     
                 for (int i = 0; i < tasks.size(); i++) {
-                    int completed = 0;
-                    if(tasks.get(i).Completed)
-                    {
-                        completed = 1;
-                    }
-                    database.execSQL("INSERT INTO " + MY_DATABASE_TABLE + " (Id, Title, ParentId, Level, Completed)"
-                    + " VALUES (" + tasks.get(i).Id + ", '" + Utilities.ReplaceApostrophe(tasks.get(i).Title) + "'," + tasks.get(i).ParentId + "," + tasks.get(i).Level + "," + completed + ");");
+                	Task task = tasks.get(i);
+                	task.SaveToDatabase(database, MY_DATABASE_TABLE);                 
                 }
             }
            catch(Exception e) {
@@ -328,7 +324,7 @@ public class TodoDroid extends Activity {
 
     private void Export() {
     	//create a new file called "new.xml" in the SD card
-        File newxmlfile = new File(Environment.getExternalStorageDirectory()+"/new.xml");
+        File newxmlfile = new File(mPath.getAbsolutePath()+"//" + mChosenFile);
         try{
                 newxmlfile.createNewFile();
         }catch(IOException e){
@@ -357,23 +353,16 @@ public class TodoDroid extends Activity {
                         SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
                         Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId  IS NULL", null);
 
-                        int IdColumn = c.getColumnIndex("Id");
-                        int TitleColumn = c.getColumnIndex("Title");
-                        int CompletedColumn = c.getColumnIndex("Completed");
-                        
-                        Task task = new Task();
                         c.moveToFirst();
                         if (c != null && c.getCount() > 0) {
                             do {
-                            	task.Id = c.getInt(IdColumn);
-                                task.Title = c.getString(TitleColumn);
-                                int completedint = new Integer(c.getString(CompletedColumn));
-                                task.Completed = completedint == 1;
+                            	Task task = new Task(c);
+                            	
                                 
                                 serializer.startTag(null, "TASK");
                                 serializer.attribute(null, "ID", task.Id.toString());
                                 serializer.attribute(null, "TITLE", task.Title);
-                                if(completedint == 1)
+                                if(task.Completed)
                                 {
                                 	serializer.attribute(null, "PERCENTDONE", "100");
                                 	//TODO: DONEDATE and DONEDATESTRING - needs to load from database(when the field has been implemented), and needs to implement time
@@ -557,20 +546,38 @@ public class TodoDroid extends Activity {
          builder.setItems(mFileList, new DialogInterface.OnClickListener(){
            public void onClick(DialogInterface dialog, int which){
               mChosenFile = mFileList[which];
-              //you can do stuff with the file here too
-              try {
-				importXML();
-			} catch (Exception e) {
-                e.printStackTrace();
-                //TODO: Load XML Failed
-                new AlertDialog.Builder(Activity)
-                .setTitle("Error")
-                .setMessage("Sorry An Error Has Occured.")
-                .setPositiveButton(android.R.string.yes, null)
-                    .setNegativeButton(android.R.string.no, null).show();
-			}
+              
+              if(!mChosenFile.endsWith(".tdl"))
+              {         
+            	  //TODO: Need a way to go back up a directory level
+            	  mPath = new File(mPath.getAbsolutePath() + "//" +  mChosenFile + "//");
+                  FilenameFilter filter = new FilenameFilter(){
+                      public boolean accept(File dir, String filename){
+                          File sel = new File(dir, filename);
+                          return filename.contains(FTYPE) || sel.isDirectory();
+                      }
+                  };
+            	  mFileList = mPath.list(filter);
+            	  onCreateDialog(DIALOG_LOAD_FILE);
+              }
+              else
+              {
+            	  //File Selected
+                  try {
+    				importXML();
+    				} catch (Exception e) {
+    	                e.printStackTrace();
+    	                //TODO: Load XML Failed
+    	                new AlertDialog.Builder(Activity)
+    	                .setTitle("Error")
+    	                .setMessage("Sorry An Error Has Occured.")
+    	                .setPositiveButton(android.R.string.yes, null)
+    	                    .setNegativeButton(android.R.string.no, null).show();
+    				}
 
-              populateTree(myDB);
+                  populateTree(myDB);
+              }
+
            }
           });
       break;
