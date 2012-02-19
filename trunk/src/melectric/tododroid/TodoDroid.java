@@ -3,9 +3,14 @@ package melectric.tododroid;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,10 +32,13 @@ import pl.polidea.treeview.TreeStateManager;
 import pl.polidea.treeview.TreeViewList;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -70,12 +78,12 @@ public class TodoDroid extends Activity {
 
     private final String MY_DATABASE_NAME = "TaskListDatabase";
     private final String MY_DATABASE_TABLE = "t_Tasks";
-  
+    private SQLiteDatabase myDB = null;
     
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SQLiteDatabase myDB = null;
+        
         Activity = this;
         SavedInstanceState = savedInstanceState;
         try {
@@ -113,15 +121,7 @@ public class TodoDroid extends Activity {
                }
             
             try {
-                importXML();
-
-                populateTree(myDB);
-            }catch (IOException e) {
-                new AlertDialog.Builder(Activity)
-                .setTitle("Error")
-                .setMessage("File Tasklist.tdl not found.")
-                .setPositiveButton(android.R.string.yes, null)
-                .setNegativeButton(android.R.string.no, null).show();
+            	SelectFile();
             } catch (Exception e) {
                 e.printStackTrace();
                 //TODO: Load XML Failed
@@ -208,7 +208,9 @@ public class TodoDroid extends Activity {
         
         SQLiteDatabase database = null;
         try {
-            List<Task> tasks = BaseFeedParser.parse2();
+        	
+        	// Environment.getExternalStorageDirectory()+"/TaskList.tdl"
+            List<Task> tasks = BaseFeedParser.parse2(Environment.getExternalStorageDirectory()+"/" + mChosenFile);
                 this.deleteDatabase(MY_DATABASE_NAME);
                 
                 database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
@@ -313,6 +315,7 @@ public class TodoDroid extends Activity {
            // startActivityForResult(myIntent, 0);
         } else if (item.getItemId() == R.id.export_menu_item) {
             Export();
+        	// SelectFile();
         } else if (item.getItemId() == R.id.expand_all_menu_item) {
             manager.expandEverythingBelow(null);
         } else if (item.getItemId() == R.id.collapse_all_menu_item) {
@@ -344,37 +347,47 @@ public class TodoDroid extends Activity {
                 //we set the FileOutputStream as output for the serializer, using UTF-8 encoding
                         serializer.setOutput(fileos, "UTF-8");
                         //Write <?xml declaration with encoding (if encoding not null) and standalone flag (if standalone not null)
-                        serializer.startDocument(null, Boolean.valueOf(true));
+                        serializer.startDocument("windows-1252", Boolean.valueOf(true));
                         //set indentation option
                         serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
                         //start a tag called "root"
-                        serializer.startTag(null, "root");
+                        serializer.startTag(null, "TODOLIST");
                         //i indent code just to have a view similar to xml-tree
                         
                         SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
-                        Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks", null);
+                        Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId  IS NULL", null);
 
-                        int Column2 = c.getColumnIndex("Title");
+                        int IdColumn = c.getColumnIndex("Id");
+                        int TitleColumn = c.getColumnIndex("Title");
                         int CompletedColumn = c.getColumnIndex("Completed");
                         
                         Task task = new Task();
                         c.moveToFirst();
-                        if (c != null) {
+                        if (c != null && c.getCount() > 0) {
                             do {
-                                task.Title = c.getString(Column2);
+                            	task.Id = c.getInt(IdColumn);
+                                task.Title = c.getString(TitleColumn);
                                 int completedint = new Integer(c.getString(CompletedColumn));
                                 task.Completed = completedint == 1;
                                 
-                                
-                                serializer.startTag(null, "Task");
-                                //set an attribute called "attribute" with a "value" for <child2>
+                                serializer.startTag(null, "TASK");
+                                serializer.attribute(null, "ID", task.Id.toString());
                                 serializer.attribute(null, "TITLE", task.Title);
-                                serializer.endTag(null, "Task");
+                                if(completedint == 1)
+                                {
+                                	serializer.attribute(null, "PERCENTDONE", "100");
+                                	//TODO: DONEDATE
+                                	//TODO: DONEDATESTRING
+                                }
+                                
+                                CreateChildTask(myDB, serializer, task.Id);
+                                
+                                serializer.endTag(null, "TASK");
                                 
                             } while (c.moveToNext());
                         }
                                
-                        serializer.endTag(null, "root");
+                        serializer.endTag(null, "TODOLIST");
                         serializer.endDocument();
                         //write xml data into the FileOutputStream
                         serializer.flush();
@@ -387,16 +400,60 @@ public class TodoDroid extends Activity {
                         .setPositiveButton(android.R.string.yes, null)
                             .setNegativeButton(android.R.string.no, null).show();
                 } catch (Exception e) {
-                        Log.e("Exception","error occurred while creating xml file");
+                        Log.e("Exception","");
+                        
+                        new AlertDialog.Builder(Activity)
+	                        .setTitle("Sorry!")
+	                        .setMessage("Error occurred while creating xml file")
+	                        .setPositiveButton(android.R.string.yes, null)
+	                        .setNegativeButton(android.R.string.no, null).show();
                 }
-    
-    	
-        new AlertDialog.Builder(Activity)
-        .setTitle("Sorry!")
-        .setMessage("Export has not yet been implemented.")
-        .setPositiveButton(android.R.string.yes, null)
-            .setNegativeButton(android.R.string.no, null).show();
 }
+
+	private void CreateChildTask(SQLiteDatabase myDB, XmlSerializer serializer, Integer parentId) throws IllegalArgumentException, IllegalStateException, IOException {
+        Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId = " + parentId, null);
+        int IdColumn = c.getColumnIndex("Id");
+        int TitleColumn = c.getColumnIndex("Title");
+        int CompletedColumn = c.getColumnIndex("Completed");
+        
+        Task task = new Task();
+        c.moveToFirst();
+        if (c != null && c.getCount() > 0) {
+            do {
+            	task.Id = c.getInt(IdColumn);
+                task.Title = c.getString(TitleColumn);
+                int completedint = new Integer(c.getString(CompletedColumn));
+                task.Completed = completedint == 1;
+                
+                
+                serializer.startTag(null, "TASK");
+                serializer.attribute(null, "ID", task.Id.toString());
+                serializer.attribute(null, "TITLE", task.Title);
+                if(completedint == 1)
+                {
+                	serializer.attribute(null, "PERCENTDONE", "100");
+                	
+                	//TODO: DONEDATE and DONEDATESTRING - needs to load from database(when the field has been implemented), and needs to implement time
+                	Date doneDate = new Date();
+                	
+                	SimpleDateFormat dateformatYYYYMMDD = new SimpleDateFormat("yyyy-MM-dd");
+                	StringBuilder nowYYYYMMDD = new StringBuilder( dateformatYYYYMMDD.format(doneDate));
+                	serializer.attribute(null, "DONEDATESTRING", nowYYYYMMDD.toString());
+                	
+                	long diffInDays = (doneDate.getTime() - new Date(0,0,1).getTime())/1000/60/60/24;
+                	
+                	serializer.attribute(null, "DONEDATE", String.valueOf(diffInDays));
+                }	
+                
+                
+                CreateChildTask(myDB, serializer, task.Id);
+                
+                serializer.endTag(null, "TASK");
+                
+            } while (c.moveToNext());
+        }
+		
+	}
 
 	@Override
     public void onCreateContextMenu(final ContextMenu menu, final View v,
@@ -442,4 +499,89 @@ public class TodoDroid extends Activity {
             return super.onContextItemSelected(item);
         }
     }
+
+    
+    private void SelectFile()
+    {
+    	loadFileList();
+    	showDialog(DIALOG_LOAD_FILE);
+    }
+    //In an Activity
+    private String[] mFileList;
+    private File mPath = new File(Environment.getExternalStorageDirectory() + "//");
+    private String mChosenFile;
+    private static final String FTYPE = ".tdl";    
+    private static final int DIALOG_LOAD_FILE = 1000;
+
+    private void loadFileList(){
+      try{
+         mPath.mkdirs();
+      }
+      catch(SecurityException e){
+         Log.e(TAG, "unable to write on the sd card " + e.toString());
+      }
+      if(mPath.exists()){
+         FilenameFilter filter = new FilenameFilter(){
+             public boolean accept(File dir, String filename){
+                 File sel = new File(dir, filename);
+                 return filename.contains(FTYPE) || sel.isDirectory();
+             }
+         };
+         mFileList = mPath.list(filter);
+      }
+      else{
+        mFileList= new String[0];
+      }
+    }
+
+      protected Dialog onCreateDialog(int id){
+      Dialog dialog = null;
+      AlertDialog.Builder builder = new Builder(this);
+
+      switch(id){
+      case DIALOG_LOAD_FILE:
+       builder.setTitle("Choose your file");
+       if(mFileList == null){
+         Log.e(TAG, "Showing file picker before loading the file list");
+         dialog = builder.create();
+         return dialog;
+       }
+         builder.setItems(mFileList, new DialogInterface.OnClickListener(){
+           public void onClick(DialogInterface dialog, int which){
+              mChosenFile = mFileList[which];
+              //you can do stuff with the file here too
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              //new LoadXMLTask().execute(Environment.getExternalStorageDirectory()+"/" + mChosenFile);
+
+              
+              try {
+				importXML();
+			} catch (Exception e) {
+                e.printStackTrace();
+                //TODO: Load XML Failed
+                new AlertDialog.Builder(Activity)
+                .setTitle("Error")
+                .setMessage("Sorry An Error Has Occured.")
+                .setPositiveButton(android.R.string.yes, null)
+                    .setNegativeButton(android.R.string.no, null).show();
+			}
+
+              populateTree(myDB);
+           }
+          });
+      break;
+      }
+      dialog = builder.show();
+      return dialog;
+     } 
 }
+
