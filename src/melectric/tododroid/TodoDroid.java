@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -311,7 +312,6 @@ public class TodoDroid extends Activity {
            // startActivityForResult(myIntent, 0);
         } else if (item.getItemId() == R.id.export_menu_item) {
             Export();
-        	// SelectFile();
         } else if (item.getItemId() == R.id.expand_all_menu_item) {
             manager.expandEverythingBelow(null);
         } else if (item.getItemId() == R.id.collapse_all_menu_item) {
@@ -504,16 +504,30 @@ public class TodoDroid extends Activity {
               mChosenFile = mFileList[which];
               
               if(!mChosenFile.endsWith(".tdl"))
-              {         
-            	  //TODO: Need a way to go back up a directory level
-            	  mPath = new File(mPath.getAbsolutePath() + "//" +  mChosenFile + "//");
+              {        
+            	  if(mChosenFile == "Go Back")
+            	  {
+            		//TODO: Bug if you go back too many levels to a non existant directory
+            		 int lastindex = mPath.getAbsolutePath().lastIndexOf("/");
+            		 mChosenFile = mPath.getAbsolutePath().substring(0, lastindex);
+            		 
+            		 mPath = new File(mChosenFile); 
+            	  }
+            	  else
+            	  {
+            		  mPath = new File(mPath.getAbsolutePath() + "//" +  mChosenFile + "//"); 
+            	  }
+            	  
                   FilenameFilter filter = new FilenameFilter(){
                       public boolean accept(File dir, String filename){
                           File sel = new File(dir, filename);
                           return filename.contains(FTYPE) || sel.isDirectory();
                       }
                   };
-            	  mFileList = mPath.list(filter);
+                  mFileList = mPath.list(filter);
+                  mFileList = (String[]) prepend(mFileList, "Go Back");
+                 // mFileList = (String[]) ArrayUtils.addAll(mPath.list(filter), mPath.list(filter));
+            	  
             	  onCreateDialog(DIALOG_LOAD_FILE);
               }
               else
@@ -541,5 +555,16 @@ public class TodoDroid extends Activity {
       dialog = builder.show();
       return dialog;
      } 
+      
+      public static Object[]  prepend(Object[] oldArray, Object  o)
+      {
+        Object[] newArray = (Object[])Array.newInstance(oldArray.getClass().getComponentType(), oldArray.length + 1);
+
+        System.arraycopy(oldArray, 0, newArray, 1, oldArray.length);
+
+        newArray[0] = o;
+
+        return newArray;
+      }
 }
 
