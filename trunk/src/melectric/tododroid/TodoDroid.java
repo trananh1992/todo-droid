@@ -376,8 +376,16 @@ public class TodoDroid extends Activity {
                                 if(completedint == 1)
                                 {
                                 	serializer.attribute(null, "PERCENTDONE", "100");
-                                	//TODO: DONEDATE
-                                	//TODO: DONEDATESTRING
+                                	//TODO: DONEDATE and DONEDATESTRING - needs to load from database(when the field has been implemented), and needs to implement time
+                                	Date doneDate = new Date();
+                                	
+                                	SimpleDateFormat dateformatYYYYMMDD = new SimpleDateFormat("yyyy-MM-dd");
+                                	StringBuilder nowYYYYMMDD = new StringBuilder( dateformatYYYYMMDD.format(doneDate));
+                                	serializer.attribute(null, "DONEDATESTRING", nowYYYYMMDD.toString());
+                                	
+                                	long diffInDays = (doneDate.getTime() - new Date(0,0,1).getTime())/1000/60/60/24;
+                                	
+                                	serializer.attribute(null, "DONEDATE", String.valueOf(diffInDays));
                                 }
                                 
                                 CreateChildTask(myDB, serializer, task.Id);
@@ -550,19 +558,6 @@ public class TodoDroid extends Activity {
            public void onClick(DialogInterface dialog, int which){
               mChosenFile = mFileList[which];
               //you can do stuff with the file here too
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              //new LoadXMLTask().execute(Environment.getExternalStorageDirectory()+"/" + mChosenFile);
-
-              
               try {
 				importXML();
 			} catch (Exception e) {

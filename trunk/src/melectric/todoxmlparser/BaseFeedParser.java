@@ -22,13 +22,13 @@ import android.util.Log;
 public class BaseFeedParser {
     static List<String> list;
     static List<Task> tasks;
-    public static List<Task> parse2() throws Exception
+    public static List<Task> parse2(String filePath) throws Exception
     {
         list = new ArrayList<String>();
         tasks = new ArrayList<Task>();  
         
         try{
-            File f = new File(Environment.getExternalStorageDirectory()+"/TaskList.tdl");
+            File f = new File(filePath);
           
             FileInputStream fileIS = new FileInputStream(f);
 

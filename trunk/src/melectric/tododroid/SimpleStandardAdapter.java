@@ -8,6 +8,7 @@ import pl.polidea.treeview.AbstractTreeViewAdapter;
 import pl.polidea.treeview.R;
 import pl.polidea.treeview.TreeNodeInfo;
 import pl.polidea.treeview.TreeStateManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -49,6 +50,33 @@ class SimpleStandardAdapter extends AbstractTreeViewAdapter<Long> {
                 final boolean isChecked) {
             final Long id = (Long) buttonView.getTag();
             changeSelected(isChecked, id);
+            int completed = 0;
+            if(isChecked)
+            {
+            	completed = 1;
+            }
+                String strFilter = "Id=" + id;
+                ContentValues args = new ContentValues();
+                args.put("Completed", completed);
+                myDB.update("t_Tasks", args, strFilter, null);
+                
+                Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks", null);
+                int IdColumn = c.getColumnIndex("Id");
+                int TitleColumn = c.getColumnIndex("Title");
+                int CompletedColumn = c.getColumnIndex("Completed");
+                
+                c.moveToFirst();
+                Task task = new Task();
+                if (c != null && c.getCount() > 0) {
+                    do {
+                    	task.Id = c.getInt(IdColumn);
+                        task.Title = c.getString(TitleColumn);
+                        int completedint = new Integer(c.getString(CompletedColumn));
+                        task.Completed = completedint == 1;
+                    } while (c.moveToNext());
+                }
+                    
+
         }
     };
 
