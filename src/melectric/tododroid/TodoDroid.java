@@ -80,6 +80,7 @@ public class TodoDroid extends Activity {
 
     private final String MY_DATABASE_NAME = "TaskListDatabase";
     private final String MY_DATABASE_TABLE = "t_Tasks";
+    private final String MY_DATABASE_ATTRIBUTETABLE = "t_Attributes";
     private SQLiteDatabase myDB = null;
     
     @Override
@@ -218,11 +219,14 @@ public class TodoDroid extends Activity {
                 database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
                 
                 database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
-                    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3));");
+                    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3), UNUSEDATTRIBUTES VARCHAR);");
                     
+                database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_ATTRIBUTETABLE
+                        + " (TaskId INT(3), Name VARCHAR, Value VARCHAR);");
+                        
                 for (int i = 0; i < tasks.size(); i++) {
                 	Task task = tasks.get(i);
-                	task.SaveToDatabase(database, MY_DATABASE_TABLE);                 
+                	task.SaveToDatabase(database, MY_DATABASE_TABLE, MY_DATABASE_ATTRIBUTETABLE);                 
                 }
             }
            catch(Exception e) {
@@ -358,7 +362,7 @@ public class TodoDroid extends Activity {
                         c.moveToFirst();
                         if (c != null && c.getCount() > 0) {
                             do {
-                            	Task task = new Task(c);
+                            	Task task = new Task(c, myDB);
                             	
                                	serializer.startTag(null, "TASK");
                                 task.SaveAttributesToFile(serializer);
@@ -397,7 +401,7 @@ public class TodoDroid extends Activity {
         c.moveToFirst();
         if (c != null && c.getCount() > 0) {
             do {
-            	Task task = new Task(c);
+            	Task task = new Task(c, myDB);
                 
             	serializer.startTag(null, "TASK");
                 task.SaveAttributesToFile(serializer);
