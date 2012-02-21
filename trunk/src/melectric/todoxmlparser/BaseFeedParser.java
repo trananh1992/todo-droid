@@ -72,10 +72,14 @@ public class BaseFeedParser {
                     Element child = (Element) childNode;
                     try
                     {
-                    Task task = new Task(child, parentId, parentLevel);
-                        tasks.add(task);
-                        list.add(task.Title);
-                        getChildNodes(child, task.Id, parentLevel + 1);
+                    	String name = child.getNodeName();
+                    	if("TASK".equals(name))
+                    	{
+                            Task task = new Task(child, parentId, parentLevel);
+                            tasks.add(task);
+                            list.add(task.Title);
+                            getChildNodes(child, task.Id, parentLevel + 1);
+                    	}
                     }
                     catch(NumberFormatException e){
                         // Not a Task Node so Ignore
