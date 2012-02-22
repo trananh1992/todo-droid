@@ -5,7 +5,7 @@ import java.util.Set;
 import melectric.todoxmlparser.Task;
 
 import pl.polidea.treeview.AbstractTreeViewAdapter;
-import pl.polidea.treeview.R;
+import melectric.tododroid.R;
 import pl.polidea.treeview.TreeNodeInfo;
 import pl.polidea.treeview.TreeStateManager;
 import android.content.ContentValues;

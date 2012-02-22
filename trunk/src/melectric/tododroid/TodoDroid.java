@@ -7,27 +7,17 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.xmlpull.v1.XmlSerializer;
-
-import melectric.todoxmlparser.Attribute;
 import melectric.todoxmlparser.BaseFeedParser;
 import melectric.todoxmlparser.Task;
-import melectric.todoxmlparser.Utilities;
+
+import org.xmlpull.v1.XmlSerializer;
+
 import pl.polidea.treeview.InMemoryTreeStateManager;
-import pl.polidea.treeview.R;
 import pl.polidea.treeview.TreeBuilder;
 import pl.polidea.treeview.TreeNodeInfo;
 import pl.polidea.treeview.TreeStateManager;
@@ -41,7 +31,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.AsyncTask;
+import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -56,7 +46,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
 
 /**
- * Demo activity showing how the tree view can be used.
+ * Main Tree Activity
  * 
  */
 public class TodoDroid extends Activity {
@@ -87,8 +77,49 @@ public class TodoDroid extends Activity {
     private final String MY_DATABASE_XMLNODETABLE = "t_XmlNode";
     private final String MY_DATABASE_XMLNODEATTRIBUTETABLE = "t_XmlNodeAttribute";
     private final String MY_DATABASE_XMLPROJECTATTRIBUTETABLE = "t_XmlProjectAttribute";
+    private final String MY_DATABASE_TODODROIDSETTINGS = "t_Settings";
+    
+    
     
     private SQLiteDatabase myDB = null;
+    
+    /**
+     * Check if the database exist
+     * 
+     * @return true if it exists, false if it doesn't
+     */
+    private boolean DataBaseExists() {
+        SQLiteDatabase checkDB = null;
+        boolean exists = false;
+        try {
+            checkDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+            Cursor c = checkDB.rawQuery("SELECT * FROM " + MY_DATABASE_TODODROIDSETTINGS, null);
+            int NameColumn = c.getColumnIndex("Name");     
+            int ValueColumn = c.getColumnIndex("Value");     
+            
+            c.moveToFirst();
+            if (c != null) {
+             do {
+            	 if(c.getString(NameColumn).equals("mChosenFile"))
+            	 {
+            		 mChosenFile = c.getString(ValueColumn);
+            	 }
+            	 if(c.getString(NameColumn).equals("mPath"))
+            	 {
+            		 mPath = new File(c.getString(ValueColumn));
+            	 }
+            	 
+            	 exists = true;
+             }while(c.moveToNext());
+            }
+            checkDB.close();
+        } catch (SQLiteException e) {
+            // database doesn't exist yet.
+        	Log.d(TAG, "Database Not Found");
+        }
+        return exists;
+    }
+
     
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -98,7 +129,15 @@ public class TodoDroid extends Activity {
         SavedInstanceState = savedInstanceState;
 
         try {
-        	SelectFile();
+        	boolean dbExists = DataBaseExists();
+        	if(dbExists)
+        	{
+        		populateTree();
+        	}
+        	else
+        	{
+        		SelectFile();
+        	}
         } catch (Exception e) {
             e.printStackTrace();
             //TODO: Load XML Failed
@@ -111,7 +150,7 @@ public class TodoDroid extends Activity {
     }
 
     @SuppressWarnings("unchecked")
-	private void populateTree(SQLiteDatabase myDB) {
+	private void populateTree() {
         List<Integer> titles = new ArrayList<Integer>(); 
         myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
         Cursor cursor = myDB.rawQuery("SELECT * FROM t_Tasks" , null);
@@ -180,29 +219,24 @@ public class TodoDroid extends Activity {
         
         SQLiteDatabase database = null;
         try {
-        	this.deleteDatabase(MY_DATABASE_NAME);
-            database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
+        	database = prepareBlankDatabase();
             
-            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
-                + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3), UNUSEDATTRIBUTES VARCHAR);");
-                
-            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_ATTRIBUTETABLE
-                    + " (TaskId INT(3), Name VARCHAR, Value VARCHAR);");
-            
-            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODETABLE
-                    + " (Name VARCHAR);");
-            
-            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODEATTRIBUTETABLE
-                    + " (NodeName VARCHAR, Name VARCHAR, Value VARCHAR);");
-            
-            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLPROJECTATTRIBUTETABLE
-                    + " (Name VARCHAR, Value VARCHAR);");
+		    ContentValues args = new ContentValues();
+        	args.put("Name", "mChosenFile");
+        	args.put("Value", mChosenFile);
+        	database.insert(MY_DATABASE_TODODROIDSETTINGS, "", args);
         	
-        	// Environment.getExternalStorageDirectory()+"/TaskList.tdl"
+		    args = new ContentValues();
+        	args.put("Name", "mPath");
+        	args.put("Value", mPath.getAbsolutePath());
+        	database.insert(MY_DATABASE_TODODROIDSETTINGS, "", args);
+        	
+        	
             List<Task> tasks = BaseFeedParser.parse2(mPath.getAbsolutePath()+"//" + mChosenFile, database);
                 
-                        
-                for (int i = 0; i < tasks.size(); i++) {
+                int numberOfTasks = tasks.size();
+                for (int i = 0; i < numberOfTasks; i++) {
+                	Log.d(TAG, "Adding task To Database:" + i + " of " + numberOfTasks);
                 	Task task = tasks.get(i);
                 	task.SaveToDatabase(database, MY_DATABASE_TABLE, MY_DATABASE_ATTRIBUTETABLE);                 
                 }
@@ -216,6 +250,32 @@ public class TodoDroid extends Activity {
            }
         // dialog.cancel();
     }
+
+
+	private SQLiteDatabase prepareBlankDatabase() {
+		
+		this.deleteDatabase(MY_DATABASE_NAME);
+		SQLiteDatabase database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
+		
+		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
+		    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3), UNUSEDATTRIBUTES VARCHAR);");
+		    
+		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_ATTRIBUTETABLE
+		        + " (TaskId INT(3), Name VARCHAR, Value VARCHAR);");
+		
+		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODETABLE
+		        + " (Name VARCHAR);");
+		
+		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODEATTRIBUTETABLE
+		        + " (NodeName VARCHAR, Name VARCHAR, Value VARCHAR);");
+		
+		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLPROJECTATTRIBUTETABLE
+		        + " (Name VARCHAR, Value VARCHAR);");
+		
+		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TODODROIDSETTINGS
+		        + " (Name VARCHAR, Value VARCHAR);");
+		return database;
+	}
  
     @Override
     protected void onSaveInstanceState(final Bundle outState) {
@@ -296,7 +356,7 @@ public class TodoDroid extends Activity {
                         serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
                         //start a tag called "root"
                         serializer.startTag(null, "TODOLIST");
-                        
+                        SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
                         Cursor projectAttributesCursor = myDB.rawQuery("SELECT * FROM " + MY_DATABASE_XMLPROJECTATTRIBUTETABLE, null);
                         int nameColumn = projectAttributesCursor.getColumnIndex("Name");
                         int valueColumn = projectAttributesCursor.getColumnIndex("Value");
@@ -307,7 +367,7 @@ public class TodoDroid extends Activity {
                             } while (projectAttributesCursor.moveToNext());
                         }
                                                 
-                        SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+                        
                         Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId  IS NULL", null);
 
                         c.moveToFirst();
@@ -507,7 +567,16 @@ public class TodoDroid extends Activity {
               ContentValues args = new ContentValues();
               args.put("Id", highestTaskId);
               args.put("Title", value);
-              args.put("ParentId", ParentId);
+              if(ParentId == 0)
+              {
+            	  args.putNull("ParentId");
+              }
+              else
+              {
+            	  args.put("ParentId", ParentId);
+              }
+              
+              
               args.put("Level", level);
               args.put("Completed", 0);
               args.put("COMMENTS", "");
@@ -588,6 +657,8 @@ public class TodoDroid extends Activity {
     
     private void SelectFile()
     {
+    	mChosenFile = "";
+    	mPath = new File(Environment.getExternalStorageDirectory() + "//");;
     	loadFileList();
     	showDialog(DIALOG_LOAD_FILE);
     }
@@ -667,6 +738,7 @@ public class TodoDroid extends Activity {
             	  //File Selected
                   try {
     				importXML();
+    				populateTree();
     				} catch (Exception e) {
     	                e.printStackTrace();
     	                //TODO: Load XML Failed
@@ -676,8 +748,6 @@ public class TodoDroid extends Activity {
     	                .setPositiveButton(android.R.string.yes, null)
     	                    .setNegativeButton(android.R.string.no, null).show();
     				}
-
-                  populateTree(myDB);
               }
 
            }
