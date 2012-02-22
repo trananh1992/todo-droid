@@ -8,5 +8,9 @@
 	<item android:visible="true" android:id="@+id/context_menu_collapse" android:title="@string/collapse_all_menu"
 		android:alphabeticShortcut="c" android:numericShortcut="3" android:enabled="true" android:titleCondensed="@string/collapse_all_condesed"></item>
     <item android:visible="true" android:id="@+id/context_menu_delete" android:title="@string/delete_menu"
-        android:alphabeticShortcut="d" android:numericShortcut="4" android:enabled="true" android:titleCondensed="@string/delete_menu_condensed"></item>
+        android:alphabeticShortcut="d" android:numericShortcut="4" android:enabled="true" android:titleCondensed="@string/delete_menu_condensed"></item><item android:id="@+id/context_menu_addchild" android:titleCondensed="Add Child" android:title="Add Child" android:enabled="true" android:visible="true">
+    </item><item android:id="@+id/context_menu_addbelow" android:titleCondensed="Add Below" android:title="Add Below" android:enabled="true" android:visible="true"></item>
+    <item android:id="@+id/context_menu_edit" android:titleCondensed="Edit" android:title="Edit" android:enabled="true" android:visible="true"></item>
+    
+    
 </menu>
