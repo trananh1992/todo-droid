@@ -85,7 +85,6 @@ public class TodoDroid extends Activity {
     private final String MY_DATABASE_XMLNODEATTRIBUTETABLE = "t_XmlNodeAttribute";
     private final String MY_DATABASE_XMLPROJECTATTRIBUTETABLE = "t_XmlProjectAttribute";
     
-    
     private SQLiteDatabase myDB = null;
     
     @Override
@@ -210,7 +209,6 @@ public class TodoDroid extends Activity {
         // dialog.cancel();
     }
  
-
     @Override
     protected void onSaveInstanceState(final Bundle outState) {
         outState.putSerializable("treeManager", manager);
@@ -241,50 +239,22 @@ public class TodoDroid extends Activity {
         inflater.inflate(R.menu.main_menu, menu);
         return true;
     }
-
-//    @Override
-//    public boolean onPrepareOptionsMenu(final Menu menu) {
-//        final MenuItem collapsibleMenu = menu
-//                .findItem(R.id.collapsible_menu_item);
-//        if (collapsible) {
-//            collapsibleMenu.setTitle(R.string.collapsible_menu_disable);
-//            collapsibleMenu.setTitleCondensed(getResources().getString(
-//                    R.string.collapsible_condensed_disable));
-//        } else {
-//            collapsibleMenu.setTitle(R.string.collapsible_menu_enable);
-//            collapsibleMenu.setTitleCondensed(getResources().getString(
-//                    R.string.collapsible_condensed_enable));
-//        }
-//        return super.onPrepareOptionsMenu(menu);
-//    }
-
+    
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         if (item.getItemId() == R.id.fancy_menu_item) {
             try {
-                importXML();
-                SQLiteDatabase myDB = null;
-                populateTree(myDB);
-        } catch (IOException e) {
-            new AlertDialog.Builder(Activity)
-            .setTitle("Error")
-            .setMessage("File Tasklist.tdl not found.")
-            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int whichButton) {
-
-                }})
-                .setNegativeButton(android.R.string.no, null).show();
-        }catch (Exception e) {
+            	
+            	SelectFile();
+            } catch (Exception e) {
+                e.printStackTrace();
+                //TODO: Load XML Failed
                 new AlertDialog.Builder(Activity)
-                .setTitle("Error")
-                .setMessage("Sorry An Error Has Occured.")
-                .setPositiveButton(android.R.string.yes, null)
-                    .setNegativeButton(android.R.string.no, null).show();
+	                .setTitle("Error")
+	                .setMessage("Sorry An Error Has Occured.")
+	                .setPositiveButton(android.R.string.yes, null)
+	                .setNegativeButton(android.R.string.no, null).show();
             }
-            
-           // Intent myIntent = new Intent(Activity, TaskDetails.class);
-           // startActivityForResult(myIntent, 0);
         } else if (item.getItemId() == R.id.export_menu_item) {
             Export();
         } else if (item.getItemId() == R.id.expand_all_menu_item) {
@@ -455,7 +425,6 @@ public class TodoDroid extends Activity {
         }
     }
 
-    
     private void SelectFile()
     {
     	loadFileList();
@@ -489,7 +458,7 @@ public class TodoDroid extends Activity {
       }
     }
 
-      protected Dialog onCreateDialog(int id){
+    protected Dialog onCreateDialog(int id){
       Dialog dialog = null;
       AlertDialog.Builder builder = new Builder(this);
 
@@ -558,7 +527,7 @@ public class TodoDroid extends Activity {
       return dialog;
      } 
       
-      public static Object[]  prepend(Object[] oldArray, Object  o)
+    public static Object[]  prepend(Object[] oldArray, Object  o)
       {
         Object[] newArray = (Object[])Array.newInstance(oldArray.getClass().getComponentType(), oldArray.length + 1);
 

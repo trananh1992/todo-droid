@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:id="@+id/fancy_menu_item" android:titleCondensed="import"
-		android:alphabeticShortcut="f" android:title="import test" android:enabled="true" android:visible="true"
+	<item android:id="@+id/fancy_menu_item" android:titleCondensed="Open"
+		android:alphabeticShortcut="f" android:title="Open" android:enabled="true" android:visible="true"
 		android:numericShortcut="2"></item>
 	<item android:enabled="true" android:titleCondensed="@string/expand_all_condensed" android:visible="true"
 		android:title="@string/expand_all_menu" android:id="@+id/expand_all_menu_item" android:numericShortcut="3"
