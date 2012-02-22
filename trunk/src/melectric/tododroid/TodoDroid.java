@@ -81,6 +81,11 @@ public class TodoDroid extends Activity {
     private final String MY_DATABASE_NAME = "TaskListDatabase";
     private final String MY_DATABASE_TABLE = "t_Tasks";
     private final String MY_DATABASE_ATTRIBUTETABLE = "t_Attributes";
+    private final String MY_DATABASE_XMLNODETABLE = "t_XmlNode";
+    private final String MY_DATABASE_XMLNODEATTRIBUTETABLE = "t_XmlNodeAttribute";
+    private final String MY_DATABASE_XMLPROJECTATTRIBUTETABLE = "t_XmlProjectAttribute";
+    
+    
     private SQLiteDatabase myDB = null;
     
     @Override
@@ -89,55 +94,12 @@ public class TodoDroid extends Activity {
         
         Activity = this;
         SavedInstanceState = savedInstanceState;
-        try {
-            List<Integer> titles = new ArrayList<Integer>(); 
-    
-            try {
-                    myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
-                    Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks" , null);
-                    
-                    int Column1 = c.getColumnIndex("Id");               
-                    
-                    // Check if our result was valid.
-                    c.moveToFirst();
-                    if (c != null) {
-                     // Loop through all Results
-                     do {
-                         Integer Id = c.getInt(Column1);
-                         titles.add(Id);
-                     }while(c.moveToNext());
-                    }
-            }
-            catch(Exception e) {
-                Log.e("Error", "Error", e);
-                
-                new AlertDialog.Builder(this)
-                .setTitle("No Data Found")
-                .setMessage("Do you want to import 'TaskList.tdl' from SDCard root directory?")
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int whichButton) {
 
-                    }})
-                 .setNegativeButton(android.R.string.no, null).show();
-               }
-            
-            try {
-            	SelectFile();
-            } catch (Exception e) {
-                e.printStackTrace();
-                //TODO: Load XML Failed
-                new AlertDialog.Builder(Activity)
-                .setTitle("Error")
-                .setMessage("Sorry An Error Has Occured.")
-                .setPositiveButton(android.R.string.yes, null)
-                    .setNegativeButton(android.R.string.no, null).show();
-            }
-        
-        } catch (Exception e1) {
-            e1.printStackTrace();
-            //Load Failed
+        try {
+        	SelectFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+            //TODO: Load XML Failed
             new AlertDialog.Builder(Activity)
             .setTitle("Error")
             .setMessage("Sorry An Error Has Occured.")
@@ -211,18 +173,27 @@ public class TodoDroid extends Activity {
         
         SQLiteDatabase database = null;
         try {
+        	this.deleteDatabase(MY_DATABASE_NAME);
+            database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
+            
+            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
+                + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3), UNUSEDATTRIBUTES VARCHAR);");
+                
+            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_ATTRIBUTETABLE
+                    + " (TaskId INT(3), Name VARCHAR, Value VARCHAR);");
+            
+            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODETABLE
+                    + " (Name VARCHAR);");
+            
+            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODEATTRIBUTETABLE
+                    + " (NodeName VARCHAR, Name VARCHAR, Value VARCHAR);");
+            
+            database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLPROJECTATTRIBUTETABLE
+                    + " (Name VARCHAR, Value VARCHAR);");
         	
         	// Environment.getExternalStorageDirectory()+"/TaskList.tdl"
-            List<Task> tasks = BaseFeedParser.parse2(mPath.getAbsolutePath()+"//" + mChosenFile);
-                this.deleteDatabase(MY_DATABASE_NAME);
+            List<Task> tasks = BaseFeedParser.parse2(mPath.getAbsolutePath()+"//" + mChosenFile, database);
                 
-                database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
-                
-                database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
-                    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3), UNUSEDATTRIBUTES VARCHAR);");
-                    
-                database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_ATTRIBUTETABLE
-                        + " (TaskId INT(3), Name VARCHAR, Value VARCHAR);");
                         
                 for (int i = 0; i < tasks.size(); i++) {
                 	Task task = tasks.get(i);
@@ -353,8 +324,15 @@ public class TodoDroid extends Activity {
                         //start a tag called "root"
                         serializer.startTag(null, "TODOLIST");
                         
-                    	StringBuilder nowYYYYMMDD = new StringBuilder(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
-                    	serializer.attribute(null, "LASTMODIFIED", nowYYYYMMDD.toString());
+                        Cursor projectAttributesCursor = myDB.rawQuery("SELECT * FROM " + MY_DATABASE_XMLPROJECTATTRIBUTETABLE, null);
+                        int nameColumn = projectAttributesCursor.getColumnIndex("Name");
+                        int valueColumn = projectAttributesCursor.getColumnIndex("Value");
+                        projectAttributesCursor.moveToFirst();
+                        if (projectAttributesCursor != null && projectAttributesCursor.getCount() > 0) {
+                            do {
+                            	serializer.attribute(null, projectAttributesCursor.getString(nameColumn), projectAttributesCursor.getString(valueColumn));
+                            } while (projectAttributesCursor.moveToNext());
+                        }
                                                 
                         SQLiteDatabase myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
                         Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE ParentId  IS NULL", null);
@@ -367,9 +345,29 @@ public class TodoDroid extends Activity {
                                	serializer.startTag(null, "TASK");
                                 task.SaveAttributesToFile(serializer);
                                 CreateChildTask(myDB, serializer, task.Id);
-                                serializer.endTag(null, "TASK");
-                                
+                                serializer.endTag(null, "TASK");                
                             } while (c.moveToNext());
+                        }
+                        
+                        Cursor xmlNodeCursor = myDB.rawQuery("SELECT * FROM " + MY_DATABASE_XMLNODETABLE, null);
+                        int nodeNameColumn = xmlNodeCursor.getColumnIndex("Name");
+                        xmlNodeCursor.moveToFirst();
+                        if (xmlNodeCursor != null && xmlNodeCursor.getCount() > 0) {
+                            do {
+                            	String nodeName = xmlNodeCursor.getString(nodeNameColumn);
+                            	serializer.startTag(null,  nodeName);
+                            	
+                            	Cursor xmlNodeAttributeCursor = myDB.rawQuery("SELECT * FROM " + MY_DATABASE_XMLNODEATTRIBUTETABLE + " WHERE NodeName = '" + nodeName + "'", null);
+                            	int nodeAttributeNameColumn = xmlNodeAttributeCursor.getColumnIndex("Name");
+                            	int nodeAttributeValueColumn = xmlNodeAttributeCursor.getColumnIndex("Value");
+                            	xmlNodeAttributeCursor.moveToFirst();
+                                if (xmlNodeAttributeCursor != null && xmlNodeAttributeCursor.getCount() > 0) {
+                                    do {
+                            	serializer.attribute(null, xmlNodeAttributeCursor.getString(nodeAttributeNameColumn), xmlNodeAttributeCursor.getString(nodeAttributeValueColumn));
+                                    } while (xmlNodeAttributeCursor.moveToNext());
+                                }
+                            	serializer.endTag(null,  nodeName);
+                            } while (xmlNodeCursor.moveToNext());
                         }
                                
                         serializer.endTag(null, "TODOLIST");

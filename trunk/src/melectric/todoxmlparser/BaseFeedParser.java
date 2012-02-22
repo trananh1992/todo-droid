@@ -12,17 +12,20 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Environment;
 import android.util.Log;
 
 public class BaseFeedParser {
     static List<String> list;
     static List<Task> tasks;
-    public static List<Task> parse2(String filePath) throws Exception
+    public static List<Task> parse2(String filePath, SQLiteDatabase db) throws Exception
     {
         list = new ArrayList<String>();
         tasks = new ArrayList<Task>();  
@@ -44,7 +47,19 @@ public class BaseFeedParser {
             Document document = builder.parse(fileIS);
             org.w3c.dom.Element rootElement = document.getDocumentElement();
              
-            getChildNodes(rootElement, null, -1);
+           	NamedNodeMap attributes = rootElement.getAttributes();
+        		for (int i = 0; i < attributes.getLength(); i++) { 
+        			Node attribute = attributes.item(i);
+        		    String attributeName = attribute.getNodeName();
+        		    String attributeValue = attribute.getNodeValue();
+        		    
+        		    ContentValues args = new ContentValues();
+                	args.put("Name", attributeName);
+                	args.put("Value", attributeValue);
+                	db.insert("t_XmlProjectAttribute", "", args);
+        		}
+            
+            getChildNodes(rootElement, null, -1, db);
             
             return tasks;
         } catch (ParserConfigurationException e) {
@@ -63,7 +78,7 @@ public class BaseFeedParser {
         }
     }
 
-    private static void getChildNodes(Element parent, Integer parentId, Integer parentLevel) throws Exception {
+    private static void getChildNodes(Element parent, Integer parentId, Integer parentLevel, SQLiteDatabase db) throws Exception {
         NodeList childNodes = parent.getChildNodes();
         for(int j=0; j<childNodes.getLength(); j++){
             try{
@@ -78,11 +93,44 @@ public class BaseFeedParser {
                             Task task = new Task(child, parentId, parentLevel);
                             tasks.add(task);
                             list.add(task.Title);
-                            getChildNodes(child, task.Id, parentLevel + 1);
+                            getChildNodes(child, task.Id, parentLevel + 1, db);
+                    	}
+                    	else if("TODOLIST".equals(name))
+                    	{
+                           	NamedNodeMap attributes = child.getAttributes();
+                        		for (int i = 0; i < attributes.getLength(); i++) { 
+                        			Node attribute = attributes.item(i);
+                        		    String attributeName = attribute.getNodeName();
+                        		    String attributeValue = attribute.getNodeValue();
+                        		    
+                        		    ContentValues args = new ContentValues();
+                                	args.put("Name", attributeName);
+                                	args.put("Value", attributeValue);
+                                	db.insert("t_XmlProjectAttribute", "", args);
+                        		}
+                    	}
+                    	else
+                    	{
+                        	ContentValues args = new ContentValues();
+                        	args.put("Name", name);
+                        	db.insert("t_XmlNode", "", args);
+                        	
+                        	NamedNodeMap attributes = child.getAttributes();
+                    		for (int i = 0; i < attributes.getLength(); i++) { 
+                    			Node attribute = attributes.item(i);
+                    		    String attributeName = attribute.getNodeName();
+                    		    String attributeValue = attribute.getNodeValue();
+                    		    
+                            	args = new ContentValues();
+                            	args.put("NodeName", name);
+                            	args.put("Name", attributeName);
+                            	args.put("Value", attributeValue);
+                            	db.insert("t_XmlNodeAttribute", "", args);
+                    		}
                     	}
                     }
                     catch(NumberFormatException e){
-                        // Not a Task Node so Ignore
+                        // Not a Task Node so Ignore 
                     }
 
                 }
