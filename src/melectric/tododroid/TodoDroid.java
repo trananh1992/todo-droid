@@ -214,41 +214,44 @@ public class TodoDroid extends Activity {
     }
 
     private void importXML() throws Exception {
-        // final ProgressDialog dialog = ProgressDialog.show(this, "", "Loading. Please wait...", true);
-        
-        
         SQLiteDatabase database = null;
         try {
-        	database = prepareBlankDatabase();
-            
-		    ContentValues args = new ContentValues();
-        	args.put("Name", "mChosenFile");
-        	args.put("Value", mChosenFile);
-        	database.insert(MY_DATABASE_TODODROIDSETTINGS, "", args);
-        	
-		    args = new ContentValues();
-        	args.put("Name", "mPath");
-        	args.put("Value", mPath.getAbsolutePath());
-        	database.insert(MY_DATABASE_TODODROIDSETTINGS, "", args);
-        	
-        	
-            List<Task> tasks = BaseFeedParser.parse2(mPath.getAbsolutePath()+"//" + mChosenFile, database);
-                
-                int numberOfTasks = tasks.size();
-                for (int i = 0; i < numberOfTasks; i++) {
-                	Log.d(TAG, "Adding task To Database:" + i + " of " + numberOfTasks);
-                	Task task = tasks.get(i);
-                	task.SaveToDatabase(database, MY_DATABASE_TABLE, MY_DATABASE_ATTRIBUTETABLE);                 
-                }
+	        	database = prepareBlankDatabase();
+	        	
+	        	database.beginTransaction();
+	        	
+			    ContentValues args = new ContentValues();
+	        	args.put("Name", "mChosenFile");
+	        	args.put("Value", mChosenFile);
+	        	database.insert(MY_DATABASE_TODODROIDSETTINGS, "", args);
+	        	
+			    args = new ContentValues();
+	        	args.put("Name", "mPath");
+	        	args.put("Value", mPath.getAbsolutePath());
+	        	database.insert(MY_DATABASE_TODODROIDSETTINGS, "", args);
+	        	
+	            List<Task> tasks = BaseFeedParser.parse2(mPath.getAbsolutePath()+"//" + mChosenFile, database);
+	                
+	            int numberOfTasks = tasks.size();
+	            
+	            for (int i = 0; i < numberOfTasks; i++) {
+	            	Log.d(TAG, "Adding task To Database:" + i + " of " + numberOfTasks);
+	            	Task task = tasks.get(i);
+	            	task.SaveToDatabase(database, MY_DATABASE_TABLE, MY_DATABASE_ATTRIBUTETABLE);                 
+	            }
+	            database.setTransactionSuccessful();
+	            
             }
            catch(Exception e) {
                Log.e("Error", "Error", e);
                throw e;
            } finally {
                if (database != null)
+               {
+            	   database.endTransaction();
                    database.close();
+               }
            }
-        // dialog.cancel();
     }
 
 
@@ -481,6 +484,9 @@ public class TodoDroid extends Activity {
             manager.expandDirectChildren(id);
             return true;
         } else if (item.getItemId() == R.id.context_menu_delete) {
+        	  myDB = TodoDroid.Activity.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+        	  String strFilter = "Id=" + id;
+        	  myDB.delete(MY_DATABASE_TABLE, strFilter, null);
             manager.removeNodeRecursively(id);
             return true;
         } else if (item.getItemId() == R.id.context_menu_addchild) {
