@@ -22,6 +22,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.xmlpull.v1.XmlSerializer;
 
+import melectric.todoxmlparser.Attribute;
 import melectric.todoxmlparser.BaseFeedParser;
 import melectric.todoxmlparser.Task;
 import melectric.todoxmlparser.Utilities;
@@ -52,6 +53,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.EditText;
 
 /**
  * Demo activity showing how the tree view can be used.
@@ -77,6 +79,7 @@ public class TodoDroid extends Activity {
     private SimpleStandardAdapter simpleAdapter;
     private TreeType treeType;
     private boolean collapsible;
+    private int highestTaskId;
 
     private final String MY_DATABASE_NAME = "TaskListDatabase";
     private final String MY_DATABASE_TABLE = "t_Tasks";
@@ -119,9 +122,14 @@ public class TodoDroid extends Activity {
         cursor.moveToFirst();
         if (cursor != null) {
          // Loop through all Results
+        	highestTaskId = 0;
          do {
              Integer Id = cursor.getInt(Column1);
              titles.add(Id);
+             if(Id > highestTaskId)
+             {
+            	 highestTaskId = Id;
+             }
          }while(cursor.moveToNext());
         }
         
@@ -219,13 +227,8 @@ public class TodoDroid extends Activity {
 
     protected final void setTreeAdapter(final TreeType newTreeType) {
         this.treeType = newTreeType;
-        switch (newTreeType) {
-        case SIMPLE:
-            treeView.setAdapter(simpleAdapter);
-            break;
-        default:
-            treeView.setAdapter(simpleAdapter);
-        }
+        treeView.setAdapter(simpleAdapter);
+
     }
 
     protected final void setCollapsible(final boolean newCollapsible) {
@@ -420,11 +423,169 @@ public class TodoDroid extends Activity {
         } else if (item.getItemId() == R.id.context_menu_delete) {
             manager.removeNodeRecursively(id);
             return true;
-        } else {
+        } else if (item.getItemId() == R.id.context_menu_addchild) {
+        	highestTaskId = highestTaskId + 1;
+        	
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+
+            alert.setTitle("Add Task");
+            alert.setMessage("Name:");
+
+            // Set an EditText view to get user input 
+            final EditText input = new EditText(this);
+            alert.setView(input);
+
+            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+              String value = input.getText().toString();
+              // Do something with value!
+          	  int level = 0;
+          	  myDB = TodoDroid.Activity.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+              Cursor c = myDB.rawQuery("SELECT * FROM " +  MY_DATABASE_TABLE+ " WHERE Id = " + id, null);      
+          	  int LevelColumn = c.getColumnIndex("Level");
+              c.moveToFirst();
+              if (c != null && c.getCount() > 0) {
+                  do {            	
+                  	level = c.getInt(LevelColumn);
+                  } while (c.moveToNext());
+              }
+              
+              ContentValues args = new ContentValues();
+              args.put("Id", highestTaskId);
+              args.put("Title", value);
+              args.put("ParentId", id);
+              args.put("Level", level + 1);
+              args.put("Completed", 0);
+              args.put("COMMENTS", "");
+              args.put("COMMENTSTYPE", "");
+              args.put("PRIORITY", 5); 
+              myDB.insert(MY_DATABASE_TABLE, "", args);
+              
+              manager.addBeforeChild(id, (long)highestTaskId, null);
+              }
+            });
+
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int whichButton) {
+                // Canceled.
+              }
+            });
+
+            alert.show();
+
+            return true;
+        }  else if (item.getItemId() == R.id.context_menu_addbelow) {
+        	highestTaskId = highestTaskId + 1;
+        	
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+
+            alert.setTitle("Add Task");
+            alert.setMessage("Name:");
+
+            // Set an EditText view to get user input 
+            final EditText input = new EditText(this);
+            alert.setView(input);
+
+            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+              String value = input.getText().toString();
+              // Do something with value!
+          	  int level = 0;
+          	  int ParentId = 0;
+          	  myDB = TodoDroid.Activity.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+              Cursor c = myDB.rawQuery("SELECT * FROM " +  MY_DATABASE_TABLE+ " WHERE Id = " + id, null);      
+          	  int LevelColumn = c.getColumnIndex("Level");
+          	int ParentIdColumn = c.getColumnIndex("ParentId");
+              c.moveToFirst();
+              if (c != null && c.getCount() > 0) {
+                  do {            	
+                  	level = c.getInt(LevelColumn);
+                  	ParentId = c.getInt(ParentIdColumn);
+                  } while (c.moveToNext());
+              }
+              
+              ContentValues args = new ContentValues();
+              args.put("Id", highestTaskId);
+              args.put("Title", value);
+              args.put("ParentId", ParentId);
+              args.put("Level", level);
+              args.put("Completed", 0);
+              args.put("COMMENTS", "");
+              args.put("COMMENTSTYPE", "");
+              args.put("PRIORITY", 5); 
+              myDB.insert(MY_DATABASE_TABLE, "", args);
+              if(ParentId == 0)
+              {
+                  manager.addAfterChild(null, (long)highestTaskId, id);
+              }
+              else
+              {
+                  manager.addAfterChild((long)ParentId, (long)highestTaskId, id);
+              }
+              }
+            });
+
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int whichButton) {
+                // Canceled.
+              }
+            });
+
+            alert.show();
+
+            return true;
+        }  else if (item.getItemId() == R.id.context_menu_edit) {
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+
+            alert.setTitle("Add Task");
+            alert.setMessage("Name:");
+
+            // Set an EditText view to get user input 
+            final EditText input = new EditText(this);
+            myDB = TodoDroid.Activity.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
+            Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE Id = " + id, null);
+
+            int Column2 = c.getColumnIndex("Title");
+            String Title = "";
+            c.moveToFirst();
+            if (c != null) {
+                do {
+                    Title = c.getString(Column2);
+                } while (c.moveToNext());
+            }
+            input.setText(Title);
+            alert.setView(input);
+
+            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+              String value = input.getText().toString();
+              // Do something with value!
+          		  String strFilter = "Id=" + id;
+	              ContentValues args = new ContentValues();
+	              args.put("Title", value);
+	              
+	              myDB.update("t_Tasks", args, strFilter, null);  
+	              manager.refresh();
+              }
+            });
+
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int whichButton) {
+                // Canceled.
+              }
+            });
+
+            alert.show();
+
+            return true;
+        }
+        else {
             return super.onContextItemSelected(item);
         }
     }
 
+    
+    
     private void SelectFile()
     {
     	loadFileList();

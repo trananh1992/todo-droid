@@ -55,28 +55,10 @@ class SimpleStandardAdapter extends AbstractTreeViewAdapter<Long> {
             {
             	completed = 1;
             }
-                String strFilter = "Id=" + id;
-                ContentValues args = new ContentValues();
-                args.put("Completed", completed);
-                myDB.update("t_Tasks", args, strFilter, null);
-                
-                Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks", null);
-                int IdColumn = c.getColumnIndex("Id");
-                int TitleColumn = c.getColumnIndex("Title");
-                int CompletedColumn = c.getColumnIndex("Completed");
-                
-                c.moveToFirst();
-                Task task = new Task();
-                if (c != null && c.getCount() > 0) {
-                    do {
-                    	task.Id = c.getInt(IdColumn);
-                        task.Title = c.getString(TitleColumn);
-                        int completedint = new Integer(c.getString(CompletedColumn));
-                        task.Completed = completedint == 1;
-                    } while (c.moveToNext());
-                }
-                    
-
+            String strFilter = "Id=" + id;
+            ContentValues args = new ContentValues();
+            args.put("Completed", completed);
+            myDB.update("t_Tasks", args, strFilter, null);                    
         }
     };
 
