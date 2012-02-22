@@ -1,5 +1,6 @@
 package pl.polidea.treeview;
 
+import melectric.tododroid.R;
 import android.app.Activity;
 import android.content.Context;
 import android.database.DataSetObserver;
@@ -164,8 +165,7 @@ public abstract class AbstractTreeViewAdapter<T> extends BaseAdapter implements
                     nodeInfo, true);
         } else {
             final LinearLayout linear = (LinearLayout) convertView;
-            final FrameLayout frameLayout = (FrameLayout) linear
-                    .findViewById(R.id.treeview_list_item_frame);
+            final FrameLayout frameLayout = (FrameLayout) linear.findViewById(R.id.treeview_list_item_frame);
             final View childView = frameLayout.getChildAt(0);
             updateView(childView, nodeInfo);
             return populateTreeItem(linear, childView, nodeInfo, false);
