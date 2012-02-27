@@ -29,6 +29,7 @@ import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
@@ -609,6 +610,11 @@ public class TodoDroid extends Activity {
             alert.show();
 
             return true;
+        }  else if (item.getItemId() == R.id.context_menu_view) {
+            Intent myIntent = new Intent(this,TaskDetails.class);
+            myIntent.putExtra("TaskId", id);           
+            startActivityForResult(myIntent, 0);
+            return true;
         }  else if (item.getItemId() == R.id.context_menu_edit) {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
 
@@ -657,6 +663,7 @@ public class TodoDroid extends Activity {
         else {
             return super.onContextItemSelected(item);
         }
+		
     }
 
     

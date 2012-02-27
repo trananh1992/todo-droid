@@ -11,6 +11,7 @@
         android:alphabeticShortcut="d" android:numericShortcut="4" android:enabled="true" android:titleCondensed="@string/delete_menu_condensed"></item><item android:id="@+id/context_menu_addchild" android:titleCondensed="Add Child" android:title="Add Child" android:enabled="true" android:visible="true">
     </item><item android:id="@+id/context_menu_addbelow" android:titleCondensed="Add Below" android:title="Add Below" android:enabled="true" android:visible="true"></item>
     <item android:id="@+id/context_menu_edit" android:titleCondensed="Edit" android:title="Edit" android:enabled="true" android:visible="true"></item>
+    <item android:id="@+id/context_menu_view" android:visible="false" android:title="View" android:enabled="true" android:titleCondensed="View"></item>
     
     
 </menu>
