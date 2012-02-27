@@ -1,13 +1,20 @@
 package melectric.tododroid;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +52,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.EditText;
+import android.widget.Toast;
 
 /**
  * Main Tree Activity
@@ -140,13 +148,7 @@ public class TodoDroid extends Activity {
         		SelectFile();
         	}
         } catch (Exception e) {
-            e.printStackTrace();
-            //TODO: Load XML Failed
-            new AlertDialog.Builder(Activity)
-            .setTitle("Error")
-            .setMessage("Sorry An Error Has Occured.")
-            .setPositiveButton(android.R.string.yes, null)
-                .setNegativeButton(android.R.string.no, null).show();
+        	writeErrorToFile(e, "Load File Error");
         }
     }
 
@@ -314,13 +316,7 @@ public class TodoDroid extends Activity {
             	
             	SelectFile();
             } catch (Exception e) {
-                e.printStackTrace();
-                //TODO: Load XML Failed
-                new AlertDialog.Builder(Activity)
-	                .setTitle("Error")
-	                .setMessage("Sorry An Error Has Occured.")
-	                .setPositiveButton(android.R.string.yes, null)
-	                .setNegativeButton(android.R.string.no, null).show();
+                writeErrorToFile(e, "Load File Error");
             }
         } else if (item.getItemId() == R.id.export_menu_item) {
             Export();
@@ -413,20 +409,15 @@ public class TodoDroid extends Activity {
                         serializer.flush();
                         //finally we close the file stream
                         fileos.close();
-                    	
-                        new AlertDialog.Builder(Activity)
-                        .setTitle("Success")
-                        .setMessage("The File has been created")
-                        .setPositiveButton(android.R.string.yes, null)
-                            .setNegativeButton(android.R.string.no, null).show();
-                } catch (Exception e) {
-                        Log.e("Exception","");
+                        boolean lol = true;
+                        if(lol)
+                        {
+                        	throw new InvalidObjectException("lol");
+                        }
                         
-                        new AlertDialog.Builder(Activity)
-	                        .setTitle("Sorry!")
-	                        .setMessage("Error occurred while creating xml file")
-	                        .setPositiveButton(android.R.string.yes, null)
-	                        .setNegativeButton(android.R.string.no, null).show();
+                        Toast.makeText(this, "TaskList Saved To File", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    writeErrorToFile(e, "Save Tasklist To File Failed");
                 }
 }
 
@@ -753,13 +744,7 @@ public class TodoDroid extends Activity {
     				importXML();
     				populateTree();
     				} catch (Exception e) {
-    	                e.printStackTrace();
-    	                //TODO: Load XML Failed
-    	                new AlertDialog.Builder(Activity)
-    	                .setTitle("Error")
-    	                .setMessage("Sorry An Error Has Occured.")
-    	                .setPositiveButton(android.R.string.yes, null)
-    	                    .setNegativeButton(android.R.string.no, null).show();
+    	                writeErrorToFile(e, "Load File Error");
     				}
               }
 
@@ -781,5 +766,29 @@ public class TodoDroid extends Activity {
 
         return newArray;
       }
+    
+    private void writeErrorToFile(Exception e, String message) {
+        try {
+        	final Writer result = new StringWriter();
+            final PrintWriter printWriter = new PrintWriter(result);
+            e.printStackTrace(printWriter);
+            String stacktrace = result.toString();
+          
+        	File root = new File(Environment.getExternalStorageDirectory(), "TODODROID");
+            if (!root.exists()) {
+                root.mkdirs();
+            }
+            File errorFile = new File(root, "ErrorLog.txt");
+            FileWriter writer = new FileWriter(errorFile);
+            writer.append(stacktrace);
+            writer.flush();
+            writer.close();
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Saved Error Log To SD Card TODODROID Folder", Toast.LENGTH_SHORT).show();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
 }
 
