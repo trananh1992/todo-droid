@@ -409,12 +409,7 @@ public class TodoDroid extends Activity {
                         serializer.flush();
                         //finally we close the file stream
                         fileos.close();
-                        boolean lol = true;
-                        if(lol)
-                        {
-                        	throw new InvalidObjectException("lol");
-                        }
-                        
+                        //Notify the User
                         Toast.makeText(this, "TaskList Saved To File", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     writeErrorToFile(e, "Save Tasklist To File Failed");
