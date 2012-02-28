@@ -9,3 +9,4 @@ Features planned for upcoming versions
   * Add new tasks
   * Edit existing tasks
   * Filter list by incomplete/completed/date ect.
+  * Monitor File for changes and alert user to re-load
