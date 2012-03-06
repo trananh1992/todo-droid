@@ -214,6 +214,7 @@ public class TodoDroid extends Activity {
         setTreeAdapter(newTreeType);
         setCollapsible(newCollapsible);
         registerForContextMenu(treeView);
+        manager.collapseChildren(null);
     }
 
     private void importXML() throws Exception {
