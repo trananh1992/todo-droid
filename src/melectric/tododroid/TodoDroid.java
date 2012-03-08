@@ -80,6 +80,8 @@ public class TodoDroid extends Activity {
     private boolean collapsible;
     private int highestTaskId;
 
+    private TodoDroidDatabase db;
+    
     private final String MY_DATABASE_NAME = "TaskListDatabase";
     private final String MY_DATABASE_TABLE = "t_Tasks";
     private final String MY_DATABASE_ATTRIBUTETABLE = "t_Attributes";
@@ -87,8 +89,6 @@ public class TodoDroid extends Activity {
     private final String MY_DATABASE_XMLNODEATTRIBUTETABLE = "t_XmlNodeAttribute";
     private final String MY_DATABASE_XMLPROJECTATTRIBUTETABLE = "t_XmlProjectAttribute";
     private final String MY_DATABASE_TODODROIDSETTINGS = "t_Settings";
-    
-    
     
     private SQLiteDatabase myDB = null;
     
@@ -129,11 +129,18 @@ public class TodoDroid extends Activity {
         return exists;
     }
 
-    
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+		db = new TodoDroidDatabase(this,
+				MY_DATABASE_NAME,
+				MY_DATABASE_TABLE,
+				MY_DATABASE_ATTRIBUTETABLE,
+				MY_DATABASE_XMLNODETABLE,
+				MY_DATABASE_XMLNODEATTRIBUTETABLE,
+				MY_DATABASE_XMLPROJECTATTRIBUTETABLE,
+				MY_DATABASE_TODODROIDSETTINGS
+				);        
         Activity = this;
         SavedInstanceState = savedInstanceState;
 
@@ -142,6 +149,9 @@ public class TodoDroid extends Activity {
         	if(dbExists)
         	{
         		populateTree();
+                TdlFileObserver fileOb = new TdlFileObserver(mPath.getAbsolutePath() + "//" +  mChosenFile + "//");
+                fileOb.startWatching();
+
         	}
         	else
         	{
@@ -155,24 +165,11 @@ public class TodoDroid extends Activity {
     @SuppressWarnings("unchecked")
 	private void populateTree() {
         List<Integer> titles = new ArrayList<Integer>(); 
-        myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
-        Cursor cursor = myDB.rawQuery("SELECT * FROM t_Tasks" , null);
         
-        int Column1 = cursor.getColumnIndex("Id");               
-        
-        // Check if our result was valid.
-        cursor.moveToFirst();
-        if (cursor != null) {
-         // Loop through all Results
-        	highestTaskId = 0;
-         do {
-             Integer Id = cursor.getInt(Column1);
-             titles.add(Id);
-             if(Id > highestTaskId)
-             {
-            	 highestTaskId = Id;
-             }
-         }while(cursor.moveToNext());
+        List<Task> tasks = db.GetTasks();
+        for(Task task : tasks)
+        {
+            titles.add(task.Id);
         }
         
         TreeType newTreeType = null;
@@ -183,6 +180,7 @@ public class TodoDroid extends Activity {
             treeBuilder.clear();
             for (int i = 0; i < titles.size(); i++) {
                 try{
+                	myDB = this.openOrCreateDatabase("TaskListDatabase", MODE_PRIVATE, null);
                     Cursor c = myDB.rawQuery("SELECT * FROM t_Tasks WHERE Id = " + titles.get(i).longValue(), null);
    
                     int levelColumn = c.getColumnIndex("Level");
@@ -259,29 +257,8 @@ public class TodoDroid extends Activity {
     }
 
 
-	private SQLiteDatabase prepareBlankDatabase() {
-		
-		this.deleteDatabase(MY_DATABASE_NAME);
-		SQLiteDatabase database = this.openOrCreateDatabase(MY_DATABASE_NAME, MODE_PRIVATE, null);
-		
-		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TABLE
-		    + " (Id INT(3), Title VARCHAR, ParentId INT(3), Level INT(3), Completed INT(3), COMMENTS VARCHAR, COMMENTSTYPE VARCHAR, PRIORITY INT(3), UNUSEDATTRIBUTES VARCHAR);");
-		    
-		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_ATTRIBUTETABLE
-		        + " (TaskId INT(3), Name VARCHAR, Value VARCHAR);");
-		
-		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODETABLE
-		        + " (Name VARCHAR);");
-		
-		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLNODEATTRIBUTETABLE
-		        + " (NodeName VARCHAR, Name VARCHAR, Value VARCHAR);");
-		
-		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_XMLPROJECTATTRIBUTETABLE
-		        + " (Name VARCHAR, Value VARCHAR);");
-		
-		database.execSQL("CREATE TABLE IF NOT EXISTS " + MY_DATABASE_TODODROIDSETTINGS
-		        + " (Name VARCHAR, Value VARCHAR);");
-		return database;
+	private SQLiteDatabase prepareBlankDatabase() {		
+		return db.PrepareBlankDatabase();
 	}
  
     @Override
