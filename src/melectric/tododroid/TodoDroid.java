@@ -167,8 +167,13 @@ public class TodoDroid extends Activity {
         List<Integer> titles = new ArrayList<Integer>(); 
         
         List<Task> tasks = db.GetTasks();
+        highestTaskId = 0;
         for(Task task : tasks)
         {
+        	if(task.Id > highestTaskId)
+			{
+        		highestTaskId = task.Id;
+			}
         	if(!task.Completed)
         	{
                 titles.add(task.Id);
