@@ -111,6 +111,7 @@ public class Task {
         int COMMENTSColumn = c.getColumnIndex("COMMENTS");
         int COMMENTSTYPEColumn = c.getColumnIndex("COMMENTSTYPE");
         int PRIORITYColumn = c.getColumnIndex("PRIORITY");
+        int LEVELColumn = c.getColumnIndex("Level");
         
 		this.Id = c.getInt(IdColumn);
 		this.Title = c.getString(TitleColumn);
@@ -119,6 +120,7 @@ public class Task {
         this.COMMENTS = c.getString(COMMENTSColumn);
         this.COMMENTSTYPE = c.getString(COMMENTSTYPEColumn);
         this.PRIORITY = c.getInt(PRIORITYColumn);
+        this.Level = c.getInt(LEVELColumn);
         
         this.Attributes = new ArrayList<Attribute>();
         Cursor attributeCursor = db.rawQuery("SELECT * FROM t_Attributes WHERE TaskId = " + this.Id, null);      
