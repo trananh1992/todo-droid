@@ -169,7 +169,10 @@ public class TodoDroid extends Activity {
         List<Task> tasks = db.GetTasks();
         for(Task task : tasks)
         {
-            titles.add(task.Id);
+        	if(!task.Completed)
+        	{
+                titles.add(task.Id);
+            }
         }
         
         TreeType newTreeType = null;
